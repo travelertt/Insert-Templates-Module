@@ -1,0 +1,68 @@
+<?php
+/**
+ * @file
+ * This module provides install file for insertTpl.
+ */
+/**
+ * Implements hook_schema
+ */
+function insertTpl_schema () {
+  $schema['insertTpl'] = array(
+    'description' => 'The base table for the Insert Template templates.',
+    'fields' => array(
+      'nid' => array(
+        'description' => 'The primary identifier for the templates.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => TRUE,
+      ),
+      'vid' => array(
+        'description' => 'The current {insertTpl_revision}.vid version identifier.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'type' => array(
+        'description' => 'The {insertTpl_type} of this template.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'title' => array(
+        'description' => 'The title of the template.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'created' => array(
+        'description' => 'The Unix timestamp when the template was created.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'changed' => array(
+        'description' => 'The Unix timestamp when the template was changed.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      
+    ),
+    'unique keys' => array(
+      'nid_vid' => array('nid','vid'),
+      'nid'     => array('nid'),
+    ),
+    'primary key' => array('nid'),
+    'indexes' => array(
+      'template_changed' => 'changed',
+      'template_created' => 'created',
+      'template_types' => 'type',
+    ),
+  );
+  
+  return $schema;
+}
