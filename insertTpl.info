@@ -1,0 +1,4 @@
+name = Insert Templates
+description = Insert templates into body text for complex Body copy
+core = 7.x
+files[] = insertTpl.module

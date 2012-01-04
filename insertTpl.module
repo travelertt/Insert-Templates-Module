@@ -1,0 +1,331 @@
+<?php
+/**
+ * @file
+ * This module provides the UI for the Insert template module and JS.
+ */
+variable_set('insertTpl_placeholder','[[Placeholder]]');
+
+/**
+ * Implements hook_help().
+ */
+function insertTpl_help($path, $arg) {
+  /* INFO:
+   * The help hook is for displaying helpful messages at the top of pages indicated
+   * by $section to further explain how they work. Adding certain "keywords" to the end of 
+   * a given path (like admin/modules#description) will cause this text to display elsewhere
+   * in the page as well (in this case, in the description section for the given module).
+   */
+  switch ($path) {
+    case 'admin/help#insertTpl':
+      return t("This module provides a UI for inserting templates into textfields for complex markup. Users can create additional templates.");
+    // OPTIONAL: Add additional cases for other paths that should display help text.
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function insertTpl_menu() { 
+  // This is the page that lists the availble Templates
+  $items['admin/config/content/insertTpl'] = array(
+    'title' => 'Insert Templates',
+    'page callback' => 'drupal_get_form',
+    'access arguments' => array('administer insert templates'),
+  );
+  // Page for creating new Templates
+  $items['admin/config/content/insertTpl'] = array(
+    'title' => 'Create new Insert Template',
+    'page callback' => 'drupal_get_form',
+    'access arguments' => array('administer insert templates'),
+    'page arguments' => array('insertTpl_create_form'),
+  );
+  /*
+  // more complex menu item
+  $items['admin/config/content/insertTpl'] = array(
+    'title' => 'TODO: Enter menu item title',
+    'description' => 'TODO: Enter description',
+    'page callback' => 'TODO: Enter callback function',
+    'page arguments' => '', // An array of arguments to pass to the page callback function. Integer values pass the corresponding URL component.
+    'access callback' => '', // defaults to user_access()
+    'access arguments' => array('TODO: Enter user permissions'),
+    'weight' => 0,
+    'type' => MENU_NORMAL_ITEM, // One of MENU_NORMAL_ITEM / MENU_CALLBACK / MENU_SUGGESTED_ITEM / MENU_LOCAL_TASK / MENU_DEFAULT_LOCAL_TASK
+    'menu_name' => '', // Menu to place this item in.
+    'title callback' => '', // Function to generate the title, defaults to t(). 
+    'title arguments' => '', // Arguments to send to t() or your custom callback. 
+  );
+   * 
+   */
+  // OPTIONAL: Fill in additional static menu items
+
+  return $items;
+}
+
+/**
+* Implements hook_permission().
+*/
+function insertTpl_permission() { 
+  return array(
+    'administer insert templates' => array(
+      'title' => t('Administer Insert Templates'), 
+      'description' => t('Perform administration tasks for Insert Templates.'),
+    ),
+  );
+}
+/**
+ * Implements Form Callback function insertTpl_create_form
+ */
+function insertTpl_create_form($form, &$form_state) {
+  // Text field for title of Template
+  $form['insertTpl_template_title'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Template Title'),
+    '#description' => t('The title for the Template. Must be unique and should describe the markup contained in the template.'),
+    '#size' => 40,
+    '#maxlength' => 120,
+    '#required' => TRUE,
+  );
+  
+  // Textarea for the Template markup
+  $form['insertTpl_template_markup'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Template Markup'),
+    '#description' => t('The markup for the Template. Make sure [[Placeholder]] is wrapped within your template.'),
+    '#rows' => 10,
+    '#columns' => 40,
+    '#required' => TRUE,
+  );
+  
+  //Submit Button
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save settings'),
+  );
+  
+  return $form;
+}
+
+/**
+ * Implements Form validation for insertTpl_create_form
+ * 
+ * @todo TODO: Create 
+ */
+function insertTpl_create_form_validate($form, &$form_state) {
+  $placeholder_string = variable_get('insertTpl_placeholder','[[Placeholder]]');
+  $pos = strpos($form_state['values']['insertTpl_template_markup'], $placeholder_string);
+  if ($pos === false) {
+    form_set_error('', t('The Template markup must contain the '.$placeholder_string.' string!'));
+  }
+}
+
+/**
+ * Save the insertTpl_create_form 
+ */
+function insertTpl_create_form_submit($form, &$form_state) {
+  drupal_set_message(t ('The Template has been saved. TODO: Save the templates to the database.'))
+}
+/**
+ * Implements hook_field_info().
+ */
+function insertTpl_field_info() {
+  return array(
+    'text' => array(
+      'label' => t('Text'),
+      'description' => t('This field stores varchar text in the database.'),
+      'settings' => array('max_length' => 255),
+      'instance_settings' => array('text_processing' => 0),
+      'default_widget' => 'text_textfield',
+      'default_formatter' => 'text_default',
+    ),
+    'text_long' => array(
+      'label' => t('Long text'),
+      'description' => t('This field stores long text in the database.'),
+      'settings' => array('max_length' => ''),
+      'instance_settings' => array('text_processing' => 0),
+      'default_widget' => 'text_textarea',
+      'default_formatter' => 'text_default',
+    ),
+    'text_with_summary' => array(
+      'label' => t('Long text and summary'),
+      'description' => t('This field stores long text in the database along with optional summary text.'),
+      'settings' => array('max_length' => ''),
+      'instance_settings' => array('text_processing' => 1, 'display_summary' => 0),
+      'default_widget' => 'text_textarea_with_summary',
+      'default_formatter' => 'text_summary_or_trimmed',
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_schema().
+ */
+function insertTpl_field_schema($field) {
+  if ($field['type'] == 'text_long') {
+    $columns = array(
+      'value' => array(
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => FALSE,
+      ),
+    );
+  }
+  else {
+    $columns = array(
+      'value' => array(
+        'type' => 'varchar',
+        'length' => $field['settings']['max_length'],
+        'not null' => FALSE,
+      ),
+    );
+  }
+  $columns += array(
+    'format' => array(
+      'type' => 'varchar',
+      'length' => 255,
+      'not null' => FALSE,
+    ),
+  );
+  return array(
+    'columns' => $columns,
+    'indexes' => array(
+      'format' => array('format'),
+    ),
+    'foreign keys' => array(
+      'format' => array(
+        'table' => 'filter_format',
+        'columns' => array('format' => 'format'),
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_load().
+ */
+function insertTpl_field_load($entity_type, $entities, $field, $instances, $langcode, &$items, $age) {
+  // Sample code from text.module: precompute sanitized strings so they are
+  // stored in the field cache.
+  foreach ($entities as $id => $entity) {
+    foreach ($items[$id] as $delta => $item) {
+      // Only process items with a cacheable format, the rest will be handled
+      // by formatters if needed.
+      if (empty($instances[$id]['settings']['text_processing']) || filter_format_allowcache($item['format'])) {
+        $items[$id][$delta]['safe_value'] = isset($item['value']) ? _text_sanitize($instances[$id], $langcode, $item, 'value') : '';
+        if ($field['type'] == 'text_with_summary') {
+          $items[$id][$delta]['safe_summary'] = isset($item['summary']) ? _text_sanitize($instances[$id], $langcode, $item, 'summary') : '';
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_field_validate().
+ */
+function insertTpl_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
+  foreach ($items as $delta => $item) {
+    if (!empty($item['value'])) {
+      if (!empty($field['settings']['max_length']) && drupal_strlen($item['value']) > $field['settings']['max_length']) {
+        $errors[$field['field_name']][$langcode][$delta][] = array(
+          'error' => 'text_max_length',
+          'message' => t('Insert Templates: the value may not be longer than %max characters.', array('Insert Templates' => $instance['label'], '%max' => $field['settings']['max_length'])),
+        );
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_field_insert().
+ */
+function insertTpl_field_insert($entity_type, $entity, $field, $instance, $langcode, &$items) {
+  if (variable_get('taxonomy_maintain_index_table', TRUE) && $field['storage']['type'] == 'field_sql_storage' && $entity_type == 'node' && $entity->status) {
+    $query = db_insert('taxonomy_index')->fields(array('nid', 'tid', 'sticky', 'created', ));
+    foreach ($items as $item) {
+      $query->values(array(
+        'nid' => $entity->nid,
+        'tid' => $item['tid'],
+        'sticky' => $entity->sticky,
+        'created' => $entity->created,
+      ));
+    }
+    $query->execute();
+  }
+}
+
+/**
+ * Implements hook_field_is_empty().
+ */
+function insertTpl_field_is_empty($item, $field) {
+  if (empty($item['value']) && (string) $item['value'] !== '0') {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
+ * Implements hook_field_update_forbid().
+ */
+function insertTpl_field_update_forbid($field, $prior_field, $has_data) {
+  // A 'list' field stores integer keys mapped to display values. If
+  // the new field will have fewer values, and any data exists for the
+  // abandoned keys, the field will have no way to display them. So,
+  // forbid such an update.
+  if ($has_data && count($field['settings']['allowed_values']) < count($prior_field['settings']['allowed_values'])) {
+    // Identify the keys that will be lost.
+    $lost_keys = array_diff(array_keys($field['settings']['allowed_values']), array_keys($prior_field['settings']['allowed_values']));
+    // If any data exist for those keys, forbid the update.
+    $query = new EntityFieldQuery();
+    $found = $query
+      ->fieldCondition($prior_field['field_name'], 'value', $lost_keys)
+      ->range(0, 1)
+      ->execute();
+    if ($found) {
+      throw new FieldUpdateForbiddenException("Cannot update a list field not to include keys with existing data");
+    }
+  }
+}
+
+/**
+ * Implements hook_field_update_field().
+ */
+function insertTpl_field_update_field($field, $prior_field, $has_data) {
+  // Reset the static value that keeps track of allowed values for list fields.
+  drupal_static_reset('list_allowed_values');
+}
+
+/**
+ * Implements hook_field_access().
+ */
+function insertTpl_field_access($op, $field, $entity_type, $entity, $account) {
+  if ($field['field_name'] == 'field_of_interest' && $op == 'edit') {
+    return user_access('edit field of interest', $account);
+  }
+  return TRUE;
+}
+
+/**
+ * Implements hook_field_settings_form().
+ */
+function insertTpl_field_settings_form($field, $instance, $has_data) {
+  $settings = $field['settings'];
+  $form['max_length'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Maximum length'),
+    '#default_value' => $settings['max_length'],
+    '#required' => FALSE,
+    '#element_validate' => array('element_validate_integer_positive'),
+    '#description' => t('The maximum length of the field in characters. Leave blank for an unlimited size.'),
+  );
+  return $form;
+}
+
+/**
+ * Implements hook_node_load().
+ */
+function insertTpl_node_load($nodes, $types) {
+  $result = db_query('SELECT nid, foo FROM {mytable} WHERE nid IN(:nids)', array(':nids' => array_keys($nodes)));
+  foreach ($result as $record) {
+    $nodes[$record->nid]->foo = $record->foo;
+  }
+}
