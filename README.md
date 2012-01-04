@@ -1,5 +1,5 @@
 # Insert Templates Module
-This module provides a UI for inserting templates into textfields for complex markup. Users can create additional templates.
+This module provides a UI for inserting templates into textfields for complex markup in Drupal. Users can create additional templates.
 
 ## Idea
 
